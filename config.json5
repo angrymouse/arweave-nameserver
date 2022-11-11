@@ -1,0 +1,6 @@
+{
+    arweaveGateway:"arweave.net",
+    rootHandshakeServer:"127.0.0.1:6152",
+    recursiveHandshakeServer:"127.0.0.1:6151",
+    zones:[".winston.","._arweave."]
+}

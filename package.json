@@ -1,0 +1,16 @@
+{
+  "name": "winstonnames",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/angrymouse/winstonnames",
+  "author": "nik@hns.is",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "arkb": "^1.1.61",
+    "arweave": "^1.11.6",
+    "bns-plus": "^0.15.2",
+    "json5": "^2.2.1",
+    "node-fetch": "^3.3.0"
+  }
+}
