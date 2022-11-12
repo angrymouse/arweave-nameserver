@@ -44,7 +44,6 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
   server.on('query', async (req, res, rinfo) => {
 
     const [question] = req.question;
-    if (question.name == "sl.") { return }
 
     let lookupResponse = (await rootresolver.lookup(question.name.toLowerCase(), "NS"))
 
