@@ -21,8 +21,6 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
   const ardb = new ArDB(arweave);
   const server = new bns.DNSServer({
     tcp: true,
-    async: true,
-    timeout: 5000,
     edns: true,
     dnssec: true
   });
