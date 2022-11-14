@@ -63,6 +63,7 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
       if (!managerTxId) {
         throw new Error("No manager TX found")
       }
+      managerTxId = arweave.utils.bufferTob64Url(hexToBuffer(base36ToBigInt(managerTxId).toString(16)))
       let managerTx = await fetch(`http://${config.arweaveGateway}/${managerTxId}`).then(res => res.json())
       if (!managerTx || typeof managerTx !== "object" || !Array.isArray(managerTx.managers)) {
         throw new Error("No managers found in tx")
@@ -86,3 +87,8 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
 
   server.open(53, '0.0.0.0');
 })()
+const hexToBuffer = (hexString) =>
+  Uint8Array.from(hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16)));
+function base36ToBigInt(str) {
+  return [...str].reduce((acc, curr) => BigInt(parseInt(curr, 36)) + BigInt(36) * acc, 0n);
+}
