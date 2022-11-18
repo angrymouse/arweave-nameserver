@@ -2,5 +2,6 @@
     arweaveGateway:"arweave.net",
     rootHandshakeServer:"127.0.0.1:6152",
     recursiveHandshakeServer:"127.0.0.1:6151",
-    zones:[".winston.","._arweave."]
+    zones:[".winston.","._arweave."],
+    publicIp:"63.250.44.237"
 }

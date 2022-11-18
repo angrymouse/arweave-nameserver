@@ -41,8 +41,22 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
 
   server.on('query', async (req, res, rinfo) => {
 
-    const [question] = req.question;
 
+    const [question] = req.question;
+    if (config.zones.some(zone => question.name.toLowerCase().endsWith(zone))) {
+      const rr = new wire.Record();
+
+      rr.name = question.name.toLowerCase();
+      rr.type = wire.types.A;
+      rr.ttl = 3600;
+      rr.data = new wire.ARecord();
+      rr.data.address = config.publicIp;
+
+      res.answer.push(rr);
+      res.send();
+
+      return
+    }
     let lookupResponse = (await rootresolver.lookup(question.name.toLowerCase(), "NS"))
 
     let nsServers = lookupResponse.authority.filter(record => record && record.data && record.data.ns).map(record => record.data.ns)
@@ -57,7 +71,7 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
       let domainNameservers = (await Promise.all(nsServers.map(async serverName => {
         return lookupResponse.additional.find(r => r.name == serverName) ? [lookupResponse.additional.find(r => r.name == serverName).data.address] : (await recursiveresolver.lookup(serverName, "A")).answer.map(ans => ans.data.address)
       }))).reduce((pv, cv) => [...pv, ...cv], [])
-      subresolver.setServers(domainNameservers)
+      subresolver.setServers(domainNameservers.filter(n => n))
       let domainNameserverRecords = (await subresolver.lookup(question.name.toLowerCase(), "NS")).authority.filter(record => record && record.data && record.data.ns).map(record => record.data.ns)
       let managerTxId = domainNameserverRecords.map(record => { return config.zones.some(zone => record.endsWith(zone)) ? record.slice(0, -config.zones.find(zone => record.endsWith(zone)).length) : null }).find(a => a)
       if (!managerTxId) {
@@ -77,6 +91,7 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
       }
       let zoneData = await fetch(`http://${config.arweaveGateway}/${lastZonesTx}`).then(res => res.text())
       res.answer = wire.fromZone(zoneData, question.name).filter(rec => rec.name == question.name)
+
       res.send()
     } catch (e) {
       console.warn(e);
