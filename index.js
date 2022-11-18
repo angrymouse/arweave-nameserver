@@ -36,6 +36,7 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
     edns: true,
     dnssec: true
   })
+
   rootresolver.setServers([config.rootHandshakeServer]);
   recursiveresolver.setServers([config.recursiveHandshakeServer]);
 
@@ -70,12 +71,21 @@ global.config = JSON5.parse(fs.readFileSync("./config.json5", "utf8"));
     try {
       let domainNameservers = (await Promise.all(nsServers.map(async serverName => {
         return lookupResponse.additional.find(r => r.name == serverName) ? [lookupResponse.additional.find(r => r.name == serverName).data.address] : (await recursiveresolver.lookup(serverName, "A")).answer.map(ans => ans.data.address)
-      }))).reduce((pv, cv) => [...pv, ...cv], [])
+      }))).reduce((pv, cv) => [...pv, ...cv], []).filter(ns => ns)
+      let nsLookUpRes
+
       subresolver.setServers(domainNameservers.filter(n => n))
-      let domainNameserverRecords = (await subresolver.lookup(question.name.toLowerCase(), "NS")).authority.filter(record => record && record.data && record.data.ns).map(record => record.data.ns)
+
+      nsLookUpRes = await subresolver.lookup(question.name.toLowerCase(), "NS")
+
+      let domainNameserverRecords = (nsLookUpRes).authority.filter(record => record && record.data && record.data.ns).map(record => record.data.ns)
       let managerTxId = domainNameserverRecords.map(record => { return config.zones.some(zone => record.endsWith(zone)) ? record.slice(0, -config.zones.find(zone => record.endsWith(zone)).length) : null }).find(a => a)
       if (!managerTxId) {
-        throw new Error("No manager TX found")
+        let generalLookup = await subresolver.lookup(question.name.toLowerCase(), question.type)
+        res.answer = generalLookup.answer
+        res.authority = generalLookup.authority
+        res.send()
+        return
       }
       managerTxId = arweave.utils.bufferTob64Url(hexToBuffer(base36ToBigInt(managerTxId).toString(16)))
       let managerTx = await fetch(`http://${config.arweaveGateway}/${managerTxId}`).then(res => res.json())
